@@ -1,0 +1,183 @@
+// WhatsApp Expense Agent — Prisma schema
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum UserRole {
+  OWNER
+  MEMBER
+  VIEWER
+}
+
+enum ExpenseSource {
+  TEXT
+  IMAGE
+  PDF
+  SCREENSHOT
+  MANUAL
+}
+
+enum ExpenseStatus {
+  CONFIRMED
+  NEEDS_REVIEW
+  DELETED
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+// ───────────────────────────── Models ─────────────────────────────
+
+model Family {
+  id            String   @id @default(cuid())
+  name          String
+  inviteCode    String   @unique
+  monthlyBudget Float?
+  currency      String   @default("ILS")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users             User[]
+  expenses          Expense[]
+  categories        Category[]
+  budgets           Budget[]
+  recurringExpenses RecurringExpense[]
+  alerts            Alert[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  name      String?
+  phone     String
+  role      UserRole @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenses Expense[]
+
+  // Same phone may belong to different families, but only once per family.
+  @@unique([familyId, phone])
+  @@index([phone])
+}
+
+model Expense {
+  id              String        @id @default(cuid())
+  familyId        String
+  family          Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  amount          Float
+  currency        String        @default("ILS")
+  merchantName    String?
+  description     String?
+  categoryId      String?
+  category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  paymentMethod   String?
+  expenseDate     DateTime
+  sourceType      ExpenseSource
+  sourceText      String?
+  rawOcrText      String?
+  originalFileUrl String?
+  confidence      Float?
+  status          ExpenseStatus @default(CONFIRMED)
+  isRecurring     Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([familyId, expenseDate])
+  @@index([userId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  name      String
+  type      String   @default("expense")
+  createdAt DateTime @default(now())
+
+  expenses Expense[]
+  budgets  Budget[]
+
+  @@unique([familyId, name])
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  familyId    String
+  family      Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  month       String // format: YYYY-MM
+  limitAmount Float
+  createdAt   DateTime @default(now())
+
+  @@unique([familyId, categoryId, month])
+  @@index([familyId, month])
+}
+
+model RecurringExpense {
+  id             String             @id @default(cuid())
+  familyId       String
+  family         Family             @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  merchantName   String
+  estimatedAmount Float
+  categoryName   String?
+  frequency      RecurringFrequency @default(MONTHLY)
+  nextExpectedAt DateTime?
+  active         Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([familyId, merchantName])
+  @@index([familyId])
+}
+
+model Alert {
+  id        String        @id @default(cuid())
+  familyId  String
+  family    Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  type      String
+  message   String
+  severity  AlertSeverity @default(INFO)
+  metadata  Json?
+  createdAt DateTime      @default(now())
+
+  @@index([familyId, createdAt])
+  @@index([type])
+}
+
+// Singleton row tracking the live WhatsApp bot process.
+// The bot upserts this on every connection change and bumps `lastSeenAt`
+// on a heartbeat interval; the dashboard reads it to show online/offline.
+model BotStatus {
+  id          String    @id @default("singleton")
+  connection  String    @default("close") // "open" | "connecting" | "close"
+  phone       String?
+  lastSeenAt  DateTime  @default(now())
+  connectedAt DateTime?
+  lastError   String?
+  updatedAt   DateTime  @updatedAt
+}
