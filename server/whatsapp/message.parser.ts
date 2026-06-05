@@ -61,7 +61,19 @@ export async function parseBaileysMessage(
 
   if (!msg.message) return null;
 
-  const senderPhone = normalizePhone(remoteJid);
+  // WhatsApp may deliver a 1:1 chat under the contact's phone JID
+  // (…@s.whatsapp.net) or, for privacy / business accounts, under a "LID"
+  // (…@lid). Baileys surfaces the counterpart on the message key
+  // (senderPn = phone number, senderLid = LID), so we can resolve both:
+  //   - senderPhone → the real, human-readable number (preferred for display)
+  //   - senderLid   → the privacy identifier (alternate identity for matching)
+  const isLidJid = remoteJid.endsWith("@lid");
+  const phoneJid = msg.key.senderPn ?? (isLidJid ? undefined : remoteJid);
+  const lidJid = msg.key.senderLid ?? (isLidJid ? remoteJid : undefined);
+
+  // Prefer the real phone; fall back to the LID only when that's all we have.
+  const senderPhone = normalizePhone(phoneJid ?? lidJid ?? remoteJid);
+  const senderLid = lidJid ? normalizePhone(lidJid) : undefined;
   const senderName = msg.pushName ?? undefined;
   const timestamp =
     typeof msg.messageTimestamp === "number"
@@ -77,6 +89,7 @@ export async function parseBaileysMessage(
   return {
     platform: "whatsapp",
     senderPhone,
+    senderLid,
     chatId: remoteJid,
     senderName,
     text,

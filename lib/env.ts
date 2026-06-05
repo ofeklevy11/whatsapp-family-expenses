@@ -24,6 +24,12 @@ const envSchema = z.object({
   UPLOADS_DIR: z.string().default("uploads"),
   WHATSAPP_AUTH_DIR: z.string().default("auth"),
 
+  // Dashboard login
+  ADMIN_USERNAME: z.string().default("admin"),
+  ADMIN_PASSWORD: z.string().optional().default(""),
+  AUTH_SECRET: z.string().optional().default(""),
+  SESSION_DAYS: z.coerce.number().int().positive().default(7),
+
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

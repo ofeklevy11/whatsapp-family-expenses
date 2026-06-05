@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   const [report, budget, recent] = await Promise.all([
     getMonthlyReport(family.id, monthKey),
     getBudgetStatus(family.id, monthKey),
-    listExpenses({ familyId: family.id, take: 8 }),
+    listExpenses({ familyId: family.id, monthKey, take: 8 }),
   ]);
 
   const remaining = budget.overall.remaining;

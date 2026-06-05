@@ -58,7 +58,7 @@ export type JoinResult =
 
 /**
  * Join (or re-confirm membership of) a family using an invite code.
- * The seeded OWNER phone becomes role OWNER; everyone else is a MEMBER.
+ * Everyone who joins is an OWNER — the system has no role hierarchy.
  */
 export async function joinFamily(params: {
   phone: string;
@@ -76,11 +76,8 @@ export async function joinFamily(params: {
     return { ok: true, family, user: existing, alreadyMember: true };
   }
 
-  const role =
-    phone === normalizePhone(env.OWNER_PHONE) ? UserRole.OWNER : UserRole.MEMBER;
-
   const user = await prisma.user.create({
-    data: { familyId: family.id, phone, name: params.name ?? null, role },
+    data: { familyId: family.id, phone, name: params.name ?? null, role: UserRole.OWNER },
   });
 
   return { ok: true, family, user, alreadyMember: false };

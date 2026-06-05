@@ -97,7 +97,9 @@ async function extractWithVision(
           { type: "text", text: buildImageExtractionUserPrompt(input.currentDate) },
           {
             type: "image_url",
-            image_url: { url: `data:${input.mimeType};base64,${base64}` },
+            // "high" sends the image at full resolution (tiled) — materially
+            // better OCR on crumpled / low-light / rotated receipts.
+            image_url: { url: `data:${input.mimeType};base64,${base64}`, detail: "high" },
           },
         ],
       },

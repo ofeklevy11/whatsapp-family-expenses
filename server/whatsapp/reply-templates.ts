@@ -11,16 +11,13 @@ function line(label: string, value: string): string {
 }
 
 export const replies = {
-  welcomeUnknownUser(): string {
+  accessDenied(): string {
     return [
       "שלום 👋",
-      "אני סוכן ההוצאות המשפחתי.",
+      "המספר הזה אינו מורשה לשימוש בסוכן ההוצאות המשפחתי.",
       "",
-      "כדי להצטרף למשפחה קיימת, שלח:",
-      "הצטרפות + קוד",
-      "",
-      "לדוגמה:",
-      "הצטרפות ABC123",
+      "הגישה מנוהלת על ידי מנהל המשפחה. אם לדעתך מגיעה לך גישה,",
+      "פנה למנהל כדי שיוסיף את המספר שלך מתוך הדשבורד.",
     ].join("\n");
   },
 
@@ -45,29 +42,8 @@ export const replies = {
     ].join("\n");
   },
 
-  joinSuccess(familyName: string): string {
-    return [
-      `הצטרפת למשפחת ${familyName} ✅`,
-      "",
-      "מעכשיו אפשר לשלוח לי הוצאות, למשל:",
-      "סופר 250",
-      "דלק 300",
-      "",
-      'לעזרה כתוב "עזרה".',
-    ].join("\n");
-  },
-
   joinAlreadyMember(familyName: string): string {
     return `אתה כבר חבר במשפחת ${familyName} 🙂\nאפשר פשוט לשלוח לי הוצאות.`;
-  },
-
-  joinCodeNotFound(code: string): string {
-    return [
-      `לא מצאתי משפחה עם הקוד "${code}" 😕`,
-      "",
-      "בדוק את הקוד ונסה שוב, למשל:",
-      "הצטרפות ABC123",
-    ].join("\n");
   },
 
   expenseCreated(expense: ExpenseWithRelations): string {

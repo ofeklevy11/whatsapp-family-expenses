@@ -1,6 +1,8 @@
 import { createLogger } from "@/lib/logger";
 import { todayISO, getCurrentMonthKey } from "@/lib/dates";
+import { hasOpenAI } from "@/lib/env";
 import { detectIntent } from "@/server/commands/detect-intent";
+import { runExpenseAgent } from "@/server/ai/agent/expense-agent";
 import { extractExpenseFromText } from "@/server/ai/extract-expense-from-text";
 import {
   createExpenseFromText,
@@ -21,6 +23,36 @@ const logger = createLogger("handler:text");
 
 export async function handleTextMessage(ctx: HandlerContext): Promise<void> {
   const text = ctx.message.text ?? "";
+  const { user, reply } = ctx;
+
+  // Preferred path: the conversational AI agent understands free-form Hebrew
+  // and uses tools for anything data-related. Falls back to fixed commands if
+  // there's no OpenAI key or the agent errors.
+  if (hasOpenAI) {
+    try {
+      const answer = await runExpenseAgent(
+        {
+          familyId: user.familyId,
+          userId: user.id,
+          currency: user.family.currency,
+        },
+        text,
+      );
+      await reply(answer);
+      return;
+    } catch (error) {
+      logger.error("agent failed, falling back to commands", error);
+    }
+  }
+
+  await handleWithCommands(ctx, text);
+}
+
+/** Legacy regex-command handling — used as a fallback when the agent is off. */
+async function handleWithCommands(
+  ctx: HandlerContext,
+  text: string,
+): Promise<void> {
   const command = detectIntent(text);
   const { user, reply } = ctx;
   const familyId = user.familyId;

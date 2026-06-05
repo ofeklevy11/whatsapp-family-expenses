@@ -112,6 +112,99 @@ export async function getLastExpenseByUser(
   });
 }
 
+export interface CreateManualExpenseInput {
+  familyId: string;
+  userId: string | null;
+  amount: number;
+  currency: string;
+  merchantName: string | null;
+  description: string | null;
+  categoryName: string | null;
+  paymentMethod: string | null;
+  expenseDate: Date;
+  isRecurring: boolean;
+}
+
+/** Create an expense entered by hand from the dashboard. */
+export async function createManualExpense(
+  input: CreateManualExpenseInput,
+): Promise<ExpenseWithRelations> {
+  const categoryId = await resolveCategoryId(input.familyId, input.categoryName);
+
+  return prisma.expense.create({
+    data: {
+      familyId: input.familyId,
+      userId: input.userId,
+      amount: input.amount,
+      currency: input.currency,
+      merchantName: input.merchantName,
+      description: input.description,
+      categoryId,
+      paymentMethod: input.paymentMethod,
+      expenseDate: input.expenseDate,
+      sourceType: ExpenseSource.MANUAL,
+      status: ExpenseStatus.CONFIRMED,
+      isRecurring: input.isRecurring,
+    },
+    ...expenseWithRelations,
+  });
+}
+
+export interface CreateExpensesFromCreditReportInput {
+  familyId: string;
+  userId: string | null;
+  fileUrl: string;
+  mimeType: string;
+  transactions: {
+    date: string | null;
+    merchantName: string | null;
+    amount: number;
+    currency: string;
+    category: string | null;
+    paymentMethod: string | null;
+  }[];
+  /** Per-statement confidence; low confidence flags every row for review. */
+  confidence: number;
+}
+
+/**
+ * Persist every transaction parsed from an uploaded credit-card statement.
+ * Categories are found-or-created per row. Returns the created expenses.
+ */
+export async function createExpensesFromCreditReport(
+  input: CreateExpensesFromCreditReportInput,
+): Promise<ExpenseWithRelations[]> {
+  const sourceType = input.mimeType.includes("pdf")
+    ? ExpenseSource.PDF
+    : ExpenseSource.IMAGE;
+  const status =
+    input.confidence < 0.6 ? ExpenseStatus.NEEDS_REVIEW : ExpenseStatus.CONFIRMED;
+
+  const created: ExpenseWithRelations[] = [];
+  for (const t of input.transactions) {
+    const categoryId = await resolveCategoryId(input.familyId, t.category);
+    const expense = await prisma.expense.create({
+      data: {
+        familyId: input.familyId,
+        userId: input.userId,
+        amount: t.amount,
+        currency: t.currency,
+        merchantName: t.merchantName,
+        categoryId,
+        paymentMethod: t.paymentMethod,
+        expenseDate: safeParseDate(t.date),
+        sourceType,
+        originalFileUrl: input.fileUrl,
+        confidence: input.confidence,
+        status,
+      },
+      ...expenseWithRelations,
+    });
+    created.push(expense);
+  }
+  return created;
+}
+
 /** Soft-delete the user's last expense. Returns it, or null if none. */
 export async function deleteLastExpenseByUser(
   userId: string,

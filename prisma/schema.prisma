@@ -69,6 +69,11 @@ model User {
   family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
   name      String?
   phone     String
+  // WhatsApp privacy / business contacts message via a "LID" instead of their
+  // phone number. We store it so the bot recognises the same person whether a
+  // message arrives under their phone JID or their LID, while `phone` stays the
+  // human-readable number we show in the dashboard.
+  lid       String?
   role      UserRole @default(MEMBER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,6 +83,7 @@ model User {
   // Same phone may belong to different families, but only once per family.
   @@unique([familyId, phone])
   @@index([phone])
+  @@index([lid])
 }
 
 model Expense {
@@ -167,6 +173,17 @@ model Alert {
 
   @@index([familyId, createdAt])
   @@index([type])
+}
+
+// A dashboard login created from inside the dashboard by the admin.
+// The ADMIN account itself is NOT here — it lives in .env. These are the
+// extra logins the admin opens for other people.
+model DashboardUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 // Singleton row tracking the live WhatsApp bot process.

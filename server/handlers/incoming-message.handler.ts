@@ -1,7 +1,9 @@
 import { createLogger } from "@/lib/logger";
-import { detectIntent } from "@/server/commands/detect-intent";
-import { findUserByPhone, ensureUserName } from "@/server/services/user.service";
-import { joinFamily } from "@/server/services/family.service";
+import {
+  findUserByIdentity,
+  ensureUserName,
+  reconcileUserIdentity,
+} from "@/server/services/user.service";
 import { replies } from "@/server/whatsapp/reply-templates";
 import type {
   WhatsAppAdapter,
@@ -25,15 +27,35 @@ export function createIncomingMessageHandler(
     const reply = (text: string) => adapter.sendText(message.chatId, text);
 
     try {
-      const user = await findUserByPhone(message.senderPhone);
+      const kind = message.media ? "media" : "text";
+      logger.info(
+        `⬅️  incoming ${kind} from phone=${message.senderPhone ?? "?"} lid=${message.senderLid ?? "?"} name="${message.senderName ?? ""}" text="${(message.text ?? "").slice(0, 60)}"`,
+      );
 
+      // Match on either identity — phone or LID — so privacy / business
+      // contacts are recognised the same as a plain phone number.
+      const user = await findUserByIdentity({
+        phone: message.senderPhone,
+        lid: message.senderLid,
+      });
+
+      // Access is a closed whitelist: only numbers added from the dashboard
+      // exist as users. Anyone else is refused — there is no self-service join.
       if (!user) {
-        await handleUnregistered(message, reply);
+        logger.info(`⛔ access denied — sender not in whitelist`);
+        await reply(replies.accessDenied());
         return;
       }
 
-      // Keep the display name fresh from WhatsApp's pushName.
+      logger.info(`✅ authorized as "${user.name ?? user.phone}" — processing ${kind}`);
+
+      // Keep the display name fresh, and record/normalise the sender's
+      // identity (store the LID, promote a LID-only row to the real number).
       await ensureUserName(user.id, message.senderName);
+      await reconcileUserIdentity(user.id, {
+        phone: message.senderPhone,
+        lid: message.senderLid,
+      });
 
       const ctx = { message, user, reply };
 
@@ -51,35 +73,4 @@ export function createIncomingMessageHandler(
       }
     }
   };
-}
-
-/** Onboarding flow for numbers that aren't members of any family yet. */
-async function handleUnregistered(
-  message: IncomingMessage,
-  reply: (text: string) => Promise<void>,
-): Promise<void> {
-  const command = detectIntent(message.text ?? "");
-
-  if (command.intent === "JOIN_FAMILY") {
-    const result = await joinFamily({
-      phone: message.senderPhone,
-      code: command.code,
-      name: message.senderName,
-    });
-
-    if (!result.ok) {
-      await reply(replies.joinCodeNotFound(command.code));
-      return;
-    }
-
-    await reply(
-      result.alreadyMember
-        ? replies.joinAlreadyMember(result.family.name)
-        : replies.joinSuccess(result.family.name),
-    );
-    return;
-  }
-
-  // Anything else from an unknown number → show the welcome / join prompt.
-  await reply(replies.welcomeUnknownUser());
 }

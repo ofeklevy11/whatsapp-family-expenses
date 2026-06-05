@@ -20,6 +20,12 @@ export interface IncomingMessage {
   platform: "whatsapp";
   /** Sender phone, digits only, international format (e.g. "972501234567"). */
   senderPhone: string;
+  /**
+   * Sender LID (WhatsApp's privacy/business identifier), digits only, when the
+   * message arrives under an `@lid` JID. Used as an alternate identity so the
+   * same person is recognised whether they message by phone or by LID.
+   */
+  senderLid?: string;
   /** Opaque chat identifier used to reply (Baileys JID for now). */
   chatId: string;
   /** Sender display name if WhatsApp provided one ("pushName"). */
