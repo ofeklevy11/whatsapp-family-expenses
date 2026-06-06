@@ -53,15 +53,5 @@ export default async function ExpensesPage() {
     sources: [...new Set(expenses.map((e) => e.sourceType))],
   };
 
-  return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">הוצאות</h1>
-        <p className="text-sm text-slate-500">
-          פילטרים חכמים, חיפוש, הוספה ידנית וייצוא ל-Excel/PDF — הכל מיידי.
-        </p>
-      </header>
-      <ExpensesExplorer rows={rows} options={options} currency={family.currency} />
-    </div>
-  );
+  return <ExpensesExplorer rows={rows} options={options} currency={family.currency} />;
 }

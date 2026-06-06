@@ -2,18 +2,344 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Davidovici Expenses — design tokens
+   Adapted from the Nocturne design system: dark-first glassmorphism,
+   re-tuned for a Hebrew (RTL) family-finance product.
+   - Primary accent: emerald/mint green (brand + money semantics)
+   - Curated categorical palette for data-viz
+   - Dark + Light themes via [data-theme]
+   - Hebrew UI: Heebo;  numerals/IDs: Geist Mono
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* ---------- Raw neutrals (cool-leaning) ---------- */
+  --black:        #0A0B0F;
+  --near-black:   #0E1017;
+  --ink-900:      #12141C;
+  --ink-800:      #181B25;
+  --ink-700:      #20242F;
+  --ink-600:      #2A2F3D;
+  --ink-500:      #3A4050;
+  --ink-400:      #575E72;
+  --ink-300:      #7C839A;
+  --ink-200:      #A8AEC1;
+  --ink-100:      #D5D8E2;
+  --ink-50:       #EEF0F5;
+  --white:        #FFFFFF;
+
+  /* ---------- Primary accent — emerald / mint ---------- */
+  --accent-600:   #15A06E;
+  --accent-500:   #1FBE83;
+  --accent-400:   #2BD49A;   /* hero accent */
+  --accent-300:   #7FE9C4;
+  --accent-glow:  rgba(43, 212, 154, 0.35);
+
+  /* ---------- Categorical data-viz palette (shared chroma) ---------- */
+  --cat-1:  #2BD49A;  /* mint     */
+  --cat-2:  #6EE7FF;  /* cyan     */
+  --cat-3:  #8B7CF6;  /* violet   */
+  --cat-4:  #F5B544;  /* amber    */
+  --cat-5:  #F06B86;  /* rose     */
+  --cat-6:  #5B9DF9;  /* blue     */
+  --cat-7:  #F0884B;  /* orange   */
+  --cat-8:  #C77DFF;  /* purple   */
+  --cat-9:  #4FD1C5;  /* teal     */
+  --cat-10: #E0DB5A;  /* lime     */
+
+  /* ---------- Semantic accents ---------- */
+  --green-500:    #2BD49A;
+  --amber-500:    #F5B544;
+  --red-500:      #F06B6B;
+  --violet-500:   #8B7CF6;
+  --cyan-500:     #6EE7FF;
+
+  /* ---------- Type ---------- */
+  --font-sans:    'Heebo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-display: var(--font-sans);
+
+  --text-xs:      11px;
+  --text-sm:      12px;
+  --text-base:    14px;
+  --text-md:      15px;
+  --text-lg:      17px;
+  --text-xl:      20px;
+  --text-2xl:     24px;
+  --text-3xl:     30px;
+  --text-4xl:     40px;
+  --text-5xl:     54px;
+
+  --leading-tight: 1.15;
+  --leading-snug:  1.35;
+  --leading-body:  1.55;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0em;
+  --tracking-wide:   0.04em;
+  --tracking-eyebrow: 0.08em;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-14: 56px; --space-18: 72px; --space-24: 96px;
+
+  /* ---------- Radii ---------- */
+  --radius-xs: 6px; --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+  --radius-xl: 20px; --radius-2xl: 24px; --radius-pill: 999px;
+
+  /* ---------- Blur ---------- */
+  --blur-sm:  blur(12px) saturate(140%);
+  --blur-md:  blur(24px) saturate(140%);
+  --blur-lg:  blur(40px) saturate(160%);
+
+  /* ---------- Motion ---------- */
+  --ease-out-expo:  cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-standard:  cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-micro: 80ms;  --dur-hover: 120ms; --dur-state: 200ms; --dur-layout: 320ms;
 }
 
-html,
-body {
+/* ==========================================================================
+   DARK THEME (default)
+   ========================================================================== */
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-0: var(--black);
+  --bg-1: var(--near-black);
+  --bg-2: var(--ink-900);
+  --bg-3: var(--ink-800);
+
+  --glass-1: rgba(255,255,255,0.03);
+  --glass-2: rgba(255,255,255,0.05);
+  --glass-3: rgba(255,255,255,0.08);
+  --glass-4: rgba(255,255,255,0.12);
+  --glass-hover: rgba(255,255,255,0.08);
+  --glass-active: rgba(255,255,255,0.14);
+
+  --border-subtle: rgba(255,255,255,0.06);
+  --border:        rgba(255,255,255,0.09);
+  --border-strong: rgba(255,255,255,0.16);
+  --border-focus:  rgba(43,212,154,0.60);
+
+  --fg-0: var(--ink-50);
+  --fg-1: var(--ink-100);
+  --fg-2: var(--ink-200);
+  --fg-3: var(--ink-300);
+  --fg-4: var(--ink-400);
+  --fg-accent: var(--accent-400);
+  --fg-on-accent: #042417;
+
+  --fg-success: var(--green-500);
+  --fg-warning: var(--amber-500);
+  --fg-danger:  var(--red-500);
+  --fg-info:    var(--violet-500);
+
+  --input-bg: rgba(255,255,255,0.04);
+  --solid-panel: var(--ink-900);
+
+  --shadow-1: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2:
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 -1px 0 rgba(0,0,0,0.3) inset,
+    0 10px 24px -12px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(255,255,255,0.05);
+  --shadow-3:
+    0 1px 0 rgba(255,255,255,0.08) inset,
+    0 -1px 0 rgba(0,0,0,0.4) inset,
+    0 30px 60px -20px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(255,255,255,0.10);
+  --shadow-glow: 0 0 0 1px var(--accent-glow), 0 0 24px -4px var(--accent-glow);
+  --shadow-focus: 0 0 0 3px rgba(43,212,154,0.25);
+
+  --topbar-bg: rgba(10,11,15,0.6);
+  --glow-1: radial-gradient(ellipse 820px 620px at 88% -12%, rgba(43,212,154,0.12), transparent 60%);
+  --glow-2: radial-gradient(ellipse 720px 520px at 6% 112%, rgba(110,231,255,0.07), transparent 60%);
+}
+
+/* ==========================================================================
+   LIGHT THEME — cool neutral, soft glass
+   ========================================================================== */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-0: #F4F6F9;
+  --bg-1: #EDF0F4;
+  --bg-2: #FFFFFF;
+  --bg-3: #F0F2F6;
+
+  --glass-1: rgba(255,255,255,0.55);
+  --glass-2: rgba(255,255,255,0.72);
+  --glass-3: rgba(255,255,255,0.9);
+  --glass-4: rgba(255,255,255,1);
+  --glass-hover: rgba(16,32,44,0.035);
+  --glass-active: rgba(16,32,44,0.06);
+
+  --border-subtle: rgba(16,32,52,0.07);
+  --border:        rgba(16,32,52,0.11);
+  --border-strong: rgba(16,32,52,0.18);
+  --border-focus:  rgba(21,160,110,0.55);
+
+  --fg-0: #0F1722;
+  --fg-1: #283142;
+  --fg-2: #4A5468;
+  --fg-3: #6B7488;
+  --fg-4: #97A0B2;
+  --fg-accent: var(--accent-600);
+  --fg-on-accent: #ffffff;
+
+  --green-500: #15A06E;
+  --fg-success: #15A06E;
+  --fg-warning: #C98410;
+  --fg-danger:  #D6453F;
+  --fg-info:    #6B5BD6;
+
+  --input-bg: #FFFFFF;
+  --solid-panel: #FFFFFF;
+
+  --accent-400: #1BB585;
+  --accent-glow: rgba(21,160,110,0.28);
+
+  --shadow-1: 0 1px 2px rgba(16,32,52,0.06);
+  --shadow-2:
+    0 1px 0 rgba(255,255,255,0.8) inset,
+    0 1px 2px rgba(16,32,52,0.04),
+    0 12px 28px -16px rgba(16,32,52,0.22),
+    0 0 0 1px rgba(16,32,52,0.05);
+  --shadow-3:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 24px 60px -24px rgba(16,32,52,0.30),
+    0 0 0 1px rgba(16,32,52,0.07);
+  --shadow-glow: 0 0 0 1px var(--accent-glow), 0 8px 24px -8px var(--accent-glow);
+  --shadow-focus: 0 0 0 3px rgba(21,160,110,0.20);
+
+  --topbar-bg: rgba(244,246,249,0.72);
+  --glow-1: radial-gradient(ellipse 820px 620px at 88% -12%, rgba(43,212,154,0.14), transparent 62%);
+  --glow-2: radial-gradient(ellipse 720px 520px at 4% 110%, rgba(110,231,255,0.12), transparent 62%);
+
+  /* slightly deepen viz hues for contrast on light */
+  --cat-2: #2BB8DB;
+  --cat-4: #E09A1E;
+  --cat-10: #B6B12C;
+}
+
+/* ==========================================================================
+   Element defaults
+   ========================================================================== */
+html, body {
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  margin: 0;
   padding: 0;
+}
+body {
+  direction: rtl;
+  background-image: var(--glow-1), var(--glow-2);
+  background-attachment: fixed;
+  min-height: 100vh;
+  transition: background-color var(--dur-state) var(--ease-standard), color var(--dur-state) var(--ease-standard);
+}
+*, *::before, *::after { box-sizing: border-box; }
+
+::selection { background: var(--accent-glow); color: var(--fg-0); }
+
+h1,h2,h3,h4,h5,h6 {
+  font-family: var(--font-display);
+  color: var(--fg-0);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
   margin: 0;
 }
+h1 { font-size: var(--text-4xl); }
+h2 { font-size: var(--text-3xl); }
+h3 { font-size: var(--text-2xl); }
+p { margin: 0; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+:focus-visible {
+  outline: 2px solid var(--accent-400);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
 }
+
+/* numerals: tabular, mono — used on amounts/dates/ids */
+.mono, .num {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.01em;
+}
+.eyebrow {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--fg-3);
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--glass-3);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--glass-4); background-clip: padding-box; }
+
+/* shared interaction classes */
+.noc-card { transition: border-color var(--dur-state) var(--ease-out-expo), box-shadow var(--dur-state) var(--ease-out-expo), transform var(--dur-state) var(--ease-out-expo); }
+.noc-row { transition: background var(--dur-hover) var(--ease-out-expo); }
+.noc-row:hover { background: var(--glass-hover); }
+.noc-btn:active { transform: scale(0.975); }
+.noc-input:focus { border-color: var(--border-focus) !important; box-shadow: var(--shadow-focus); }
+.noc-input::placeholder { color: var(--fg-4); }
+
+.clickable { transition: transform var(--dur-state) var(--ease-out-expo), border-color var(--dur-state) var(--ease-out-expo), box-shadow var(--dur-state) var(--ease-out-expo); }
+.clickable:hover { border-color: var(--border-strong); }
+.clickable:active { transform: scale(0.995); }
+
+@keyframes fadeUp { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drawIn { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+.fade-up { animation: fadeUp var(--dur-layout) var(--ease-out-expo) both; }
+.num-ltr { direction: ltr; unicode-bidi: isolate; }
+
+/* ==========================================================================
+   Legacy-utility bridge — keeps the secondary pages (budgets / status /
+   dashboard users) that still use Tailwind slate utilities readable on the
+   themed (dark/light) surface. Scoped to .dx-app so the redesigned screens
+   (inline-token styled) and the standalone login page are unaffected.
+   Two-class specificity beats Tailwind's single-class utilities.
+   ========================================================================== */
+.dx-app .text-slate-900 { color: var(--fg-0); }
+.dx-app .text-slate-800 { color: var(--fg-0); }
+.dx-app .text-slate-700 { color: var(--fg-1); }
+.dx-app .text-slate-600 { color: var(--fg-2); }
+.dx-app .text-slate-500 { color: var(--fg-3); }
+.dx-app .text-slate-400 { color: var(--fg-4); }
+.dx-app .bg-white { background: var(--solid-panel); }
+.dx-app .bg-slate-50 { background: var(--glass-1); }
+.dx-app .hover\:bg-slate-50:hover { background: var(--glass-hover); }
+.dx-app .hover\:bg-slate-100:hover { background: var(--glass-hover); }
+.dx-app .border-slate-200 { border-color: var(--border); }
+.dx-app .border-slate-100 { border-color: var(--border-subtle); }
+.dx-app .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--border-subtle); }
+.dx-app input,
+.dx-app select,
+.dx-app textarea {
+  background: var(--input-bg);
+  color: var(--fg-0);
+  border-color: var(--border);
+}
+.dx-app input::placeholder,
+.dx-app textarea::placeholder { color: var(--fg-4); }

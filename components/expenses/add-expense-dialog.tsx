@@ -1,178 +1,109 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { format } from "date-fns";
-import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ds/icon";
+import { Button, IconButton, Input, Select, Field } from "@/components/ds/controls";
 import { createManualExpenseAction } from "@/app/(dashboard)/expenses/actions";
+import { todayISO } from "@/lib/dates";
 import type { FilterOptions } from "@/lib/analytics";
 
 /**
- * "Add expense" button + modal form. Submits the manual-expense server action,
- * which revalidates /expenses so the new row shows up immediately.
+ * Nocturne-styled "new expense" modal. Submits the real manual-expense server
+ * action (which revalidates /expenses), so a new row appears immediately.
  */
 export function AddExpenseDialog({
+  open,
+  onClose,
   options,
   currency,
 }: {
+  open: boolean;
+  onClose: () => void;
   options: FilterOptions;
   currency: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const today = format(new Date(), "yyyy-MM-dd");
-  const inputCls =
-    "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none";
+  if (!open) return null;
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        background: "rgba(5,6,9,0.6)",
+        backdropFilter: "blur(6px)",
+        display: "grid",
+        placeItems: "center",
+        padding: 20,
+        animation: "fadeIn 160ms ease",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 460,
+          maxWidth: "100%",
+          background: "var(--solid-panel)",
+          border: "1px solid var(--border-strong)",
+          borderRadius: 20,
+          boxShadow: "var(--shadow-3)",
+          overflow: "hidden",
+          animation: "fadeUp 220ms var(--ease-out-expo)",
+        }}
       >
-        + הוצאה חדשה
-      </button>
-
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <Card
-            className="w-full max-w-lg p-0"
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <h3 className="text-base font-semibold text-slate-800">
-                  הוספת הוצאה ידנית
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-md px-2 text-slate-400 hover:bg-slate-100"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form
-                ref={formRef}
-                action={createManualExpenseAction}
-                onSubmit={() => setOpen(false)}
-                className="grid grid-cols-2 gap-3 p-5"
-              >
-                <label className="col-span-1 space-y-1 text-sm">
-                  <span className="text-slate-600">סכום *</span>
-                  <input
-                    name="amount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    autoFocus
-                    placeholder="0.00"
-                    className={inputCls}
-                  />
-                </label>
-
-                <label className="col-span-1 space-y-1 text-sm">
-                  <span className="text-slate-600">מטבע</span>
-                  <select name="currency" defaultValue={currency} className={inputCls}>
-                    <option value="ILS">₪ ILS</option>
-                    <option value="USD">$ USD</option>
-                    <option value="EUR">€ EUR</option>
-                  </select>
-                </label>
-
-                <label className="col-span-1 space-y-1 text-sm">
-                  <span className="text-slate-600">תאריך</span>
-                  <input
-                    name="expenseDate"
-                    type="date"
-                    defaultValue={today}
-                    className={inputCls}
-                  />
-                </label>
-
-                <label className="col-span-1 space-y-1 text-sm">
-                  <span className="text-slate-600">בן משפחה</span>
-                  <select name="userId" defaultValue="" className={inputCls}>
-                    <option value="">— ללא —</option>
-                    {options.members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="col-span-2 space-y-1 text-sm">
-                  <span className="text-slate-600">בית עסק</span>
-                  <input name="merchantName" type="text" className={inputCls} />
-                </label>
-
-                <label className="col-span-2 space-y-1 text-sm">
-                  <span className="text-slate-600">קטגוריה</span>
-                  <input
-                    name="categoryName"
-                    type="text"
-                    list="category-options"
-                    placeholder="בחרו או הקלידו קטגוריה חדשה"
-                    className={inputCls}
-                  />
-                  <datalist id="category-options">
-                    {options.categories.map((c) => (
-                      <option key={c.id} value={c.name} />
-                    ))}
-                  </datalist>
-                </label>
-
-                <label className="col-span-1 space-y-1 text-sm">
-                  <span className="text-slate-600">אמצעי תשלום</span>
-                  <input
-                    name="paymentMethod"
-                    type="text"
-                    list="payment-options"
-                    className={inputCls}
-                  />
-                  <datalist id="payment-options">
-                    {options.paymentMethods.map((p) => (
-                      <option key={p} value={p} />
-                    ))}
-                  </datalist>
-                </label>
-
-                <label className="col-span-1 flex items-end gap-2 pb-2 text-sm text-slate-600">
-                  <input name="isRecurring" type="checkbox" className="h-4 w-4" />
-                  הוצאה קבועה
-                </label>
-
-                <label className="col-span-2 space-y-1 text-sm">
-                  <span className="text-slate-600">תיאור</span>
-                  <textarea name="description" rows={2} className={inputCls} />
-                </label>
-
-                <div className="col-span-2 mt-1 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200"
-                  >
-                    ביטול
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-                  >
-                    שמירה
-                  </button>
-                </div>
-              </form>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "color-mix(in oklab, var(--accent-400) 20%, transparent)", color: "var(--accent-400)", display: "grid", placeItems: "center" }}>
+              <Icon name="plus" size={17} />
             </div>
-          </Card>
+            <h3 style={{ fontSize: 17 }}>הוצאה חדשה</h3>
+          </div>
+          <IconButton icon="x" onClick={onClose} />
         </div>
-      )}
-    </>
+
+        <form action={createManualExpenseAction} onSubmit={() => onClose()}>
+          <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Field label="סכום (₪)">
+                <Input type="number" name="amount" placeholder="0.00" icon="banknote" step="0.01" min="0" required />
+              </Field>
+              <Field label="תאריך">
+                <Input type="date" name="expenseDate" defaultValue={todayISO()} />
+              </Field>
+            </div>
+            <Field label="בית עסק">
+              <Input name="merchantName" placeholder="לדוגמה: רמי לוי" icon="store" />
+            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Field label="קטגוריה">
+                <Select
+                  name="categoryName"
+                  defaultValue={options.categories[0]?.name ?? ""}
+                  options={options.categories.map((c) => ({ value: c.name, label: c.name }))}
+                  style={{ width: "100%" }}
+                />
+              </Field>
+              <Field label="בן משפחה">
+                <Select
+                  name="userId"
+                  defaultValue=""
+                  options={[{ value: "", label: "— ללא —" }].concat(options.members.map((m) => ({ value: m.id, label: m.name })))}
+                  style={{ width: "100%" }}
+                />
+              </Field>
+            </div>
+            <input type="hidden" name="currency" value={currency} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-start", gap: 10, padding: "16px 22px", borderTop: "1px solid var(--border-subtle)", background: "var(--glass-1)" }}>
+            <Button variant="primary" icon="check" type="submit">
+              הוסף הוצאה
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
+              ביטול
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

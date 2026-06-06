@@ -9,10 +9,15 @@ export function Card({
 }) {
   return (
     <div
-      className={cn(
-        "rounded-2xl border border-slate-200 bg-white shadow-sm",
-        className,
-      )}
+      className={cn("noc-card", className)}
+      style={{
+        background: "var(--glass-2)",
+        border: "1px solid var(--border)",
+        borderRadius: 16,
+        boxShadow: "var(--shadow-2)",
+        backdropFilter: "var(--blur-md)",
+        WebkitBackdropFilter: "var(--blur-md)",
+      }}
     >
       {children}
     </div>
@@ -20,11 +25,15 @@ export function Card({
 }
 
 export function CardHeader({ children }: { children: React.ReactNode }) {
-  return <div className="border-b border-slate-100 px-5 py-4">{children}</div>;
+  return (
+    <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+      {children}
+    </div>
+  );
 }
 
 export function CardTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-base font-semibold text-slate-800">{children}</h3>;
+  return <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--fg-0)" }}>{children}</h3>;
 }
 
 export function CardContent({

@@ -1,93 +1,111 @@
 import { getPrimaryFamily } from "@/server/services/family.service";
 import { listFamilyMembers } from "@/server/services/user.service";
-import { formatDateHe } from "@/lib/dates";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NoFamilyState, EmptyRow } from "@/components/ui/empty-state";
+import { prisma } from "@/lib/db/prisma";
+import { Eyebrow, Badge, Avatar, CatIcon, SectionCard } from "@/components/ds/primitives";
+import { Icon } from "@/components/ds/icon";
+import { NoFamilyState } from "@/components/ui/empty-state";
 import { AddMemberForm } from "@/components/family/add-member-form";
-import { removeMemberAction } from "./actions";
+import { AddCategoryForm } from "@/components/family/add-category-form";
+import { DarkModeRow } from "@/components/family/dark-mode-row";
+import { categoryMeta, memberColor } from "@/lib/category-meta";
+import { removeMemberAction, deleteCategoryAction } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+const CURRENCY_LABEL: Record<string, string> = { ILS: "₪ שקל (ILS)", USD: "$ דולר (USD)", EUR: "€ אירו (EUR)" };
+
+function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", background: "var(--glass-1)", borderRadius: 12, border: "1px solid var(--border-subtle)" }}>
+      <span style={{ fontSize: 12.5, color: "var(--fg-3)" }}>{label}</span>
+      <span className={mono ? "num" : undefined} style={{ fontSize: 13, color: "var(--fg-1)" }}>{value}</span>
+    </div>
+  );
+}
 
 export default async function FamilyPage() {
   const family = await getPrimaryFamily();
   if (!family) return <NoFamilyState />;
 
-  const members = await listFamilyMembers(family.id);
+  const [members, categories] = await Promise.all([
+    listFamilyMembers(family.id),
+    prisma.category.findMany({ where: { familyId: family.id }, orderBy: { name: "asc" } }),
+  ]);
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">המשפחה</h1>
-        <p className="text-sm text-slate-500">
-          פרטי המשפחה וניהול בני המשפחה שיש להם גישה לבוט.
-        </p>
-      </header>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card className="p-5">
-          <p className="text-sm text-slate-500">שם המשפחה</p>
-          <p className="mt-1 text-xl font-bold text-slate-900">{family.name}</p>
-        </Card>
-        <Card className="p-5">
-          <p className="text-sm text-slate-500">גישה</p>
-          <p className="mt-1 text-base font-semibold text-slate-800">רשימה סגורה 🔒</p>
-          <p className="mt-2 text-xs text-slate-400">
-            רק מספרים שמופיעים ברשימה למטה יכולים לשלוח לבוט. כל מספר אחר נדחה.
-            כדי להוסיף אדם — הזינו את המספר שלו בטופס בתחתית העמוד.
-          </p>
-        </Card>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }} className="fade-up">
+      <div>
+        <Eyebrow>הגדרות</Eyebrow>
+        <h1 style={{ fontSize: 28, marginTop: 7 }}>הגדרות חשבון ומשפחה</h1>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>בני המשפחה</CardTitle>
-        </CardHeader>
-        <CardContent className="px-0">
-          <table className="w-full text-right text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">שם</th>
-                <th className="px-4 py-3 font-medium">טלפון</th>
-                <th className="px-4 py-3 font-medium">הצטרף בתאריך</th>
-                <th className="px-4 py-3 font-medium" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {members.length === 0 ? (
-                <EmptyRow message="אין עדיין בני משפחה." cols={4} />
-              ) : (
-                members.map((m) => (
-                  <tr key={m.id}>
-                    <td className="px-4 py-3 text-slate-800">{m.name ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600" dir="ltr">{m.phone}</td>
-                    <td className="px-4 py-3 text-slate-500">{formatDateHe(m.createdAt)}</td>
-                    <td className="px-4 py-3 text-left">
-                      <form action={removeMemberAction}>
-                        <input type="hidden" name="userId" value={m.id} />
-                        <button
-                          type="submit"
-                          className="text-xs font-medium text-red-500 hover:text-red-700"
-                        >
-                          הסר גישה
-                        </button>
-                      </form>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
+        {/* account */}
+        <SectionCard title="החשבון שלי">
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <InfoRow label="שם המשפחה" value={family.name} />
+            <InfoRow label="מטבע" value={CURRENCY_LABEL[family.currency] ?? family.currency} />
+            <InfoRow label="קוד הזמנה" value={family.inviteCode} mono />
+            <DarkModeRow />
+          </div>
+        </SectionCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>הוספת בן משפחה</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AddMemberForm />
-        </CardContent>
-      </Card>
+        {/* family */}
+        <SectionCard title="בני משפחה" sub="הזמינו בני משפחה לרשום הוצאות דרך הוואטסאפ">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <AddMemberForm />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {members.length === 0 && <p style={{ fontSize: 13, color: "var(--fg-3)" }}>אין עדיין בני משפחה.</p>}
+              {members.map((m) => {
+                const name = m.name ?? m.phone;
+                return (
+                  <div key={m.id} className="noc-row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "var(--glass-1)", borderRadius: 12, border: "1px solid var(--border-subtle)" }}>
+                    <Avatar name={name} color={memberColor(m.id)} size={34} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg-0)", display: "flex", alignItems: "center", gap: 8 }}>
+                        {name}
+                        {m.role === "OWNER" && <Badge tone="accent">בעלים</Badge>}
+                      </div>
+                      <div className="num" style={{ fontSize: 11.5, color: "var(--fg-3)", marginTop: 2 }} dir="ltr">{m.phone}</div>
+                    </div>
+                    <Badge tone="success" dot>פעיל</Badge>
+                    <form action={removeMemberAction}>
+                      <input type="hidden" name="userId" value={m.id} />
+                      <button type="submit" className="noc-btn" title="הסר גישה" style={{ width: 32, height: 32, borderRadius: 9, background: "var(--glass-2)", border: "1px solid var(--border)", color: "var(--fg-danger)", display: "grid", placeItems: "center", cursor: "pointer" }}>
+                        <Icon name="trash-2" size={14} />
+                      </button>
+                    </form>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* categories */}
+      <SectionCard title="קטגוריות" sub={`${categories.length} קטגוריות פעילות · משמשות גם לסיווג האוטומטי של ה־AI`}>
+        <div style={{ marginBottom: 18 }}>
+          <AddCategoryForm />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+          {categories.map((c) => {
+            const meta = categoryMeta(c.name);
+            return (
+              <div key={c.id} className="noc-row" style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 12px", background: "var(--glass-1)", borderRadius: 11, border: "1px solid var(--border-subtle)" }}>
+                <CatIcon icon={meta.icon} color={meta.color} size={30} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--fg-1)" }}>{c.name}</span>
+                <form action={deleteCategoryAction}>
+                  <input type="hidden" name="id" value={c.id} />
+                  <button type="submit" className="noc-btn" title="מחק" style={{ width: 28, height: 28, borderRadius: 8, background: "transparent", border: "1px solid transparent", color: "var(--fg-4)", display: "grid", placeItems: "center", cursor: "pointer" }}>
+                    <Icon name="trash-2" size={13} />
+                  </button>
+                </form>
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
     </div>
   );
 }

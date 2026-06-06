@@ -11,18 +11,22 @@ export function StatCard({
   hint?: string;
   tone?: "default" | "good" | "warn" | "danger";
 }) {
-  const toneClass = {
-    default: "text-slate-900",
-    good: "text-emerald-600",
-    warn: "text-amber-600",
-    danger: "text-red-600",
+  const color = {
+    default: "var(--fg-0)",
+    good: "var(--fg-success)",
+    warn: "var(--fg-warning)",
+    danger: "var(--fg-danger)",
   }[tone];
 
   return (
-    <Card className="p-5">
-      <p className="text-sm text-slate-500">{title}</p>
-      <p className={`mt-2 text-2xl font-bold ${toneClass}`}>{value}</p>
-      {hint ? <p className="mt-1 text-xs text-slate-400">{hint}</p> : null}
+    <Card>
+      <div style={{ padding: 18 }}>
+        <p className="eyebrow">{title}</p>
+        <p className="num" style={{ marginTop: 12, fontSize: 28, fontWeight: 600, color }}>
+          {value}
+        </p>
+        {hint ? <p style={{ marginTop: 6, fontSize: 11.5, color: "var(--fg-3)" }}>{hint}</p> : null}
+      </div>
     </Card>
   );
 }

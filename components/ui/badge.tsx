@@ -1,9 +1,40 @@
 import { ExpenseStatus, ExpenseSource, UserRole } from "@prisma/client";
 
-const STATUS_LABELS: Record<ExpenseStatus, { text: string; className: string }> = {
-  CONFIRMED: { text: "מאושר", className: "bg-emerald-100 text-emerald-700" },
-  NEEDS_REVIEW: { text: "לבדיקה", className: "bg-amber-100 text-amber-700" },
-  DELETED: { text: "נמחק", className: "bg-slate-100 text-slate-500" },
+type Tone = { bg: string; fg: string; bd: string };
+
+const TONES = {
+  success: { bg: "rgba(43,212,154,0.13)", fg: "var(--fg-success)", bd: "rgba(43,212,154,0.32)" },
+  warning: { bg: "rgba(245,181,68,0.13)", fg: "var(--fg-warning)", bd: "rgba(245,181,68,0.32)" },
+  danger: { bg: "rgba(240,107,107,0.13)", fg: "var(--fg-danger)", bd: "rgba(240,107,107,0.32)" },
+  neutral: { bg: "var(--glass-3)", fg: "var(--fg-2)", bd: "var(--border)" },
+  accent: { bg: "rgba(43,212,154,0.15)", fg: "var(--fg-accent)", bd: "rgba(43,212,154,0.4)" },
+} satisfies Record<string, Tone>;
+
+function chip(tone: Tone, text: string) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        borderRadius: 999,
+        padding: "2px 9px",
+        fontSize: 11.5,
+        fontWeight: 600,
+        background: tone.bg,
+        color: tone.fg,
+        border: `1px solid ${tone.bd}`,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {text}
+    </span>
+  );
+}
+
+const STATUS: Record<ExpenseStatus, { text: string; tone: Tone }> = {
+  CONFIRMED: { text: "מאושר", tone: TONES.success },
+  NEEDS_REVIEW: { text: "לבדיקה", tone: TONES.warning },
+  DELETED: { text: "נמחק", tone: TONES.neutral },
 };
 
 const SOURCE_LABELS: Record<ExpenseSource, string> = {
@@ -21,30 +52,14 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export function StatusBadge({ status }: { status: ExpenseStatus }) {
-  const { text, className } = STATUS_LABELS[status];
-  return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}>
-      {text}
-    </span>
-  );
+  const s = STATUS[status];
+  return chip(s.tone, s.text);
 }
 
 export function SourceBadge({ source }: { source: ExpenseSource }) {
-  return (
-    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
-      {SOURCE_LABELS[source]}
-    </span>
-  );
+  return chip(TONES.neutral, SOURCE_LABELS[source]);
 }
 
 export function RoleBadge({ role }: { role: UserRole }) {
-  const className =
-    role === "OWNER"
-      ? "bg-brand/10 text-brand-dark"
-      : "bg-slate-100 text-slate-600";
-  return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}>
-      {ROLE_LABELS[role]}
-    </span>
-  );
+  return chip(role === "OWNER" ? TONES.accent : TONES.neutral, ROLE_LABELS[role]);
 }
