@@ -39,3 +39,7 @@ npm-debug.log*
 
 # bot stderr log
 /bot.log.err
+
+# secrets bundle for client handoff — NEVER commit (contains .env, auth/, uploads/)
+/secrets-bundle.zip
+*.dump
